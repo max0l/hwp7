@@ -5,6 +5,8 @@
 #include <unistd.h>
 #include <bitset>
 
+#define BIT_PERIOD 100
+
 int main() {
     B15F& drv = B15F::getInstance();
     drv.setRegister (&DDRA , 0x0F);
@@ -18,14 +20,10 @@ int main() {
     //First some testing:
 
     while(1) {
-        std::cout << "Schreibe 0-3" << std::endl;
-        for(uint8_t i = 0; i<16;i++) {
-            drv.setRegister(&PORTA, i);
-            std::cout << std::bitset<8>(drv.getRegister(&PINA)) << "=" << (int) i << "="<< std::bitset<8>(i) << std::endl;
-            drv.delay_ms(500);
+        for(uint8_t i = 0; i<255; i++) {
+            sendDataWithManchester(i, drv);
+            drv.delay_ms(100);
         }
-        //tmp = 0;
-        drv.delay_ms(500);
     }
     
 
@@ -35,8 +33,15 @@ int main() {
 void sendDataWithManchester(uint8_t &data, B15F& drv) {
     drv.setRegister(&PORTA, (0x0F) & data);
     //drv.delay_us(10);
-    drv.delay_ms(100);
+    drv.delay_ms(BIT_PERIOD/2);
+    drv.setRegister(&PORTA, ((0x0F) & ~data));
+    drv.delay_ms(BIT_PERIOD/2);
+
     drv.setRegister(&PORTA, (data>>4));
+    //drv.delay_us(10);
+    drv.delay_ms(BIT_PERIOD/2);
+    drv.setRegister(&PORTA, (~data>>4));
+    drv.delay_ms(BIT_PERIOD/2);
 }
 
 
