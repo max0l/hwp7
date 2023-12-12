@@ -1,88 +1,136 @@
-#include <iostream>
-#include <b15f/b15f.h>
-#include <vector>
-#include <cmath>
-#include <unistd.h>
-#include <bitset>
-
-#define BIT_PERIOD 100
+#include "main.h"
 
 int main() {
+
+    std::cout << "Starting" << std::endl;
+
     B15F& drv = B15F::getInstance();
     drv.setRegister (&DDRA , 0x0F);
 
-    std::cout << "Starting" << std::endl;
-    //uint8_t tmp;
 
-    //this program will read the contents of any file, and sends it over the B15F board to another B15F board.
-    //I try using the Manchester Encoding.
+    int eingabe;
 
-    //First some testing:
+    std::cout << "Möchten Sie senden oder empfangen? Geben Sie 0 zum Senden, 1 zum Empfangen ein: ";
+    std::cin >> eingabe;
 
+    while (std::cin.fail() || (eingabe != 0 && eingabe != 1)) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Ungültige Eingabe. Bitte geben Sie 0 zum Senden, 1 zum Empfangen ein: ";
+        std::cin >> eingabe;
+    }
+
+    switch (eingabe) {
+        case 0:
+            sendData(drv);
+            // Hier könnte der Code zum Senden stehen
+            break;
+        case 1:
+            getData(drv);
+            // Hier könnte der Code zum Empfangen stehen
+            break;
+    }
+
+    return 0;
+}
+
+
+
+void sendData(B15F& drv) {
+
+    std::string input;
+    std::cout << "Bitte geben Sie einen String ein: ";
+    std::getline(std::cin, input);
+
+    std::vector<std::bitset<4>> buffer = splitIntoFourBits(input);
+    while (1) {
+        sendBits(buffer, drv); // Call the defined sendBits function
+        drv.delay_ms(1000);
+    }
+    
+}
+
+std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input) {
+    std::vector<std::bitset<4>> buffer;
+    for (size_t i = 0; i < input.size(); i++) {
+        std::bitset<4> bits(input[i]);
+        buffer.push_back(std::bitset<4>(bits >> 4)); 
+        buffer.push_back(std::bitset<4>(bits));
+        std::cout << "bits: " << bits << std::endl;
+    }
+    return buffer;
+}
+
+void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv) {
+    //send 3x CONTROL_BIT1 to indicate start of transmission
+    for(int i = 0; i<3; i++) {
+        drv.setRegister(&PORTA, CONTROL_BIT1);
+        drv.delay_ms(BIT_PERIOD);
+    }
+    for (size_t i = 0; i < buffer.size(); i++) {
+        drv.setRegister(&PORTA, buffer[i].to_ulong());
+        drv.delay_ms(BIT_PERIOD);
+    }
+}
+
+void waitForStartBit(B15F& drv) {
+    int i = 0;
+    //wait for start bit has been send 3 times in a row. Wait invinite time
     while(1) {
-        for(uint8_t i = 0; i<255; i++) {
-            sendDataWithManchester(i, drv);
-            drv.delay_ms(100);
+        if(drv.getRegister(&PINA) == CONTROL_BIT1) {
+            i++;
+        } else {
+            i = 0;
+        }
+        if(i == 3) {
+            return;
+        }
+    }
+}
+
+void getData(B15F& drv) {
+    std::vector<std::bitset<4>> buffer;
+    while(1) {
+        waitForStartBit(drv);
+        writeToBuffer(buffer, drv);
+        processBuffer(buffer);
+    } 
+    
+}
+
+void writeToBuffer(std::vector<std::bitset<4>>& buffer, B15F& drv) {
+    int controlCount = 0;
+    while (1) {
+        uint8_t data = drv.getRegister(&PINA) & 0b00001111;
+        if(data== CONTROL_BIT1) {
+            controlCount++;
+            if(controlCount == 3) {
+                for(int i = 0; i<3; i++) {
+                    buffer.pop_back();
+                }
+                return;
+            }
+        } else {
+            controlCount = 0;
+            buffer.push_back(data);
         }
     }
     
-
+    
 }
 
 
-void sendDataWithManchester(uint8_t &data, B15F& drv) {
-    drv.setRegister(&PORTA, (0x0F) & data);
-    //drv.delay_us(10);
-    drv.delay_ms(BIT_PERIOD/2);
-    drv.setRegister(&PORTA, ((0x0F) & ~data));
-    drv.delay_ms(BIT_PERIOD/2);
-
-    drv.setRegister(&PORTA, (data>>4));
-    //drv.delay_us(10);
-    drv.delay_ms(BIT_PERIOD/2);
-    drv.setRegister(&PORTA, (~data>>4));
-    drv.delay_ms(BIT_PERIOD/2);
-}
-
-
-//This will get only 4 bit at a time
-uint8_t readData(B15F& drv) {
-    uint8_t data;
-    uint8_t firstData = drv.getRegister(&PINA);
-    uint8_t secondData;
-    bool hasChanged = false;
-    while(!hasChanged) {
-        //Doing this in manchester, means that if I reveived the firstData correctly, the secondData has to be the negated version of the first one
-        secondData = drv.getRegister(&PINA);
-        if(firstData != secondData) {
-            if(firstData == ~(0xF0 & secondData)) {
-                hasChanged = true;
-            }
-        }
+void processBuffer(const std::vector<std::bitset<4>>& buffer) {
+    std::vector<char> data;
+    for (size_t i = 0; i < buffer.size(); i += 2) {
+        char combinedBits;
+        combinedBits |= (buffer[i].to_ulong() << 4);
+        combinedBits |= buffer[i + 1].to_ulong();
+        data.push_back(combinedBits);
     }
-
-    return interpretData(firstData, secondData);
-
-}
-
-uint8_t interpretData(uint8_t &firstData, uint8_t &secondData) {
-    uint8_t solution;
-    for(uint8_t i = 0; i<4; i++) {
-        if((firstData >> i) & 0x01 == 1 && (secondData >> i) & 0x01 == 0) {
-            solution |= (1 << i);
-        }
+    
+    std::cout << "Received: ";
+    for (size_t i = 0; i < data.size(); i++) {
+        std::cout << data[i];
     }
-    return solution;
 }
-
-//Instead of sending each bit alone: send 2 4Bit that are together encoded in Manchester
-//For example:
-/*
-0101
-=
-(1.)0101
-(2.)1010
-
-It will read for    PINA0: 10 -> 1
-                    PINA1: 01 -> 0
-*/
