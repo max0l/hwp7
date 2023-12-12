@@ -7,9 +7,13 @@
 
 #define BIT_PERIOD 100
 
+void sendDataWithManchester(uint8_t &data, B15F& drv);
+uint8_t readData(B15F& drv);
+uint8_t interpretData(uint8_t &firstData, uint8_t &secondData);
+
 int main() {
     B15F& drv = B15F::getInstance();
-    drv.setRegister (&DDRA , 0x0F);
+    drv.setRegister (&DDRA , 0x00);
 
     std::cout << "Starting" << std::endl;
     //uint8_t tmp;
@@ -21,8 +25,11 @@ int main() {
 
     while(1) {
         auto data = readData(drv); 
-         std::cout << std::bitset<8>(data) << "==" << (int) data << std::endl;
-         drv.delay_ms(100);
+        //std::cout <<"GOT: " <<std::bitset<8>(data) << "==" << (int) data << std::endl;
+        uint8_t tmp1 = 0;
+        uint8_t tmp2 = 0;
+        
+        drv.delay_ms(100);
     }
     
 
@@ -46,29 +53,37 @@ void sendDataWithManchester(uint8_t &data, B15F& drv) {
 
 //This will get only 4 bit at a time
 uint8_t readData(B15F& drv) {
-    uint8_t data;
     uint8_t firstData = drv.getRegister(&PINA);
+    //std::cout << std::bitset<8>(firstData) << "==" << (int) firstData << std::endl;
     uint8_t secondData;
     bool hasChanged = false;
     while(!hasChanged) {
         //Doing this in manchester, means that if I reveived the firstData correctly, the secondData has to be the negated version of the first one
         secondData = drv.getRegister(&PINA);
+        //std::cout << std::bitset<8>(secondData) << "==" << (int) secondData << std::endl;
         if(firstData != secondData) {
-            if(firstData == ~(0xF0 & secondData)) {
+            if(firstData == ~(0xF0 & secondData) || 1) {
+                //std::cout << "Data received correctly" << std::endl;
                 hasChanged = true;
+            } else {
+                std::cout << "Data received incorrectly" << std::endl;
             }
+            
         }
     }
+    //std::cout << firstData << " " << secondData << std::endl;
 
     return interpretData(firstData, secondData);
 
 }
 
 uint8_t interpretData(uint8_t &firstData, uint8_t &secondData) {
-    uint8_t solution;
+    uint8_t solution = 0;
     for(uint8_t i = 0; i<4; i++) {
-        if((firstData >> i) & 0x01 == 1 && (secondData >> i) & 0x01 == 0) {
+        if(((firstData >> i) & 0x01) == 1 && ((secondData >> i) & 0x01) == 0) {
             solution |= (1 << i);
+        } else {
+            solution &= ~(1 << i);
         }
     }
     return solution;
