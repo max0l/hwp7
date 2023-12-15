@@ -10,7 +10,7 @@ COMPILER_PATH = g++
 CFLAGS   = -std=c++17 -O3 -Wall -Wextra
 LDFLAGS  = -lb15fdrv
 OBJECTS  = main.o
-OUT      = main.elf
+OUT      = main.send
 
 COMPILE = $(COMPILER_PATH) $(CFLAGS)
 
