@@ -5,6 +5,13 @@
 #include <unistd.h>
 #include <bitset>
 
+#ifdef SEND
+    #define BITSETTING 0x0F
+#else
+    #define BITSETTING 0x00
+#endif
+
+
 #define BIT_PERIOD 1000
 #define CONTROL_BIT1 0b0001
 
@@ -12,6 +19,9 @@ uint8_t readData(B15F& drv);
 uint8_t interpretData(uint8_t &firstData, uint8_t &secondData);
 std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input);
 void sendData(B15F& drv);
+void sendBits(const std::vector<std::bitset<4>> &buffer, B15F& drv);
 void getData(B15F& drv);
-void processBuffer(const std::vector<std::bitset<4>>& buffer);
-void writeToBuffer(std::vector<std::bitset<4>>& buffer, B15F& drv);
+void processBuffer(std::vector<std::bitset<4>> *buffer);
+void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv);
+std::vector<std::bitset<4>>* cleanBuffer(std::vector<std::bitset<4>> *buffer);
+void sendStartSequence(B15F& drv);
