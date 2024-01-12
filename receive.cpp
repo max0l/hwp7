@@ -61,7 +61,7 @@ void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv) {
         }
         //data &= 0b00001111;
         if(data == CONTROL_BIT1 || data == 0) {
-            std::cout << "Got Control Bit" << std::endl;
+            //std::cout << "Got Control Bit" << std::endl;
             if(data == CONTROL_BIT1) {
                 buffer->push_back(data);
                 controlCount++;
