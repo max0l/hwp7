@@ -1,3 +1,12 @@
+#pragma once
+
+#include <iostream>
+#include <b15f/b15f.h>
+#include <vector>
+#include <cmath>
+#include <unistd.h>
+#include <bitset>
+
 #ifdef SEND
     #define BITSETTING 0x0F
 #else
