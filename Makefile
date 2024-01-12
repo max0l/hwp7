@@ -9,8 +9,7 @@ COMPILER_PATH = g++
 # Options
 CFLAGS   = -std=c++17 -Wall -Wextra
 LDFLAGS  = -lb15fdrv
-SRC	  = main.cpp, receive.cpp, send.cpp
-OBJECTS  = main.o
+OBJECTS  = main.o receive.o send.o
 OUT      = main.elf
 
 COMPILE = $(COMPILER_PATH) $(CFLAGS)

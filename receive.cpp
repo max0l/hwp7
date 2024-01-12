@@ -85,12 +85,12 @@ void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv) {
 
 std::vector<std::bitset<4>>* cleanBuffer(std::vector<std::bitset<4>> *buffer) {
     std::cout << "The buffer is:" << std::endl;
-    for (size_t i = 0; i < buffer->size(); i++) {
+    for (size_t i = 1; i < buffer->size(); i++) {
         std::cout << (*buffer)[i] << std::endl;
     }
     std::cout << "------------------Cleaning Buffer------------------" << std::endl;
     std::vector<std::bitset<4>>* cleanedBuffer = new std::vector<std::bitset<4>>;
-    for (size_t i = 0; i < buffer->size(); i++) {
+    for (size_t i = 1; i < buffer->size(); i++) {
         if((*buffer)[i] == CONTROL_BIT1 && (*buffer)[i+1] == CONTROL_BIT1 && i < buffer->size()-1) {
             cleanedBuffer->push_back(CONTROL_BIT1);
             i++;
