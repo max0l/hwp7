@@ -6,6 +6,7 @@
 #include <cmath>
 #include <unistd.h>
 #include <bitset>
+#include <unordered_map>
 
 #ifdef SEND
     #define BITSETTING 0x0F
