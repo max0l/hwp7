@@ -12,7 +12,7 @@
 #endif
 
 
-#define BIT_PERIOD 1000
+#define BIT_PERIOD 500
 #define CONTROL_BIT1 0b0001
 
 uint8_t readData(B15F& drv);
