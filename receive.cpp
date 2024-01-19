@@ -15,20 +15,10 @@ void waitForStartBit(B15F& drv) {
             continue;
         }
         current &= 0b00001111;
-        if(current == CONTROL_BIT1) {
+        if(current == STARTSYMBOL) {
             std::cout << "Got Start Bit" << std::endl;
-            i++;
-        } else if(current == 0) {
-            std::cout << "Got 0" << std::endl;
-            continue;
-        } else {
-            i = 0;
-        }
-        if(i == 3) {
-            std::cout << "Got 3 Start Bits" << std::endl;
             return;
         }
-        std::cout << std::endl;
     }
     std::cout << "------------------exiting while loop startbits------------------" << std::endl;
 }
@@ -39,7 +29,8 @@ void getData(B15F& drv) {
         waitForStartBit(drv);
         writeToBuffer(buffer, drv);
         if (!buffer->empty()) {
-            processBuffer(cleanBuffer(buffer));
+            processBuffer(cleanSonderzeichen
+        (buffer));
         }
 
         buffer->clear();
@@ -60,30 +51,19 @@ void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv) {
             continue;
         }
         //data &= 0b00001111;
-        if(data == CONTROL_BIT1 || data == 0) {
-            //std::cout << "Got Control Bit" << std::endl;
-            if(data == CONTROL_BIT1) {
-                buffer->push_back(data);
-                controlCount++;
-            }
-            if(data == 0) {
-                buffer->push_back(data);
-            }
-            if(controlCount == 3) {
-                for(int i = 0; i<5; i++) {
-                    buffer->pop_back();
-                }
-                return;
-            }
+        if(data == DOUBLESYMBOL) {
+            continue;
         } else {
-            controlCount = 0;
             buffer->push_back(data);
+        }
+        if(data==ENDTRANSMISSIONSYMBOL) {
+            return;
         }
     }  
     
 }
 
-std::vector<std::bitset<4>>* cleanBuffer(std::vector<std::bitset<4>> *buffer) {
+std::vector<std::bitset<4>>* cleanSonderzeichen(std::vector<std::bitset<4>> *buffer) {
     std::cout << "The buffer is:" << std::endl;
     for (size_t i = 1; i < buffer->size(); i++) {
         std::cout << (*buffer)[i] << std::endl;
@@ -91,17 +71,10 @@ std::vector<std::bitset<4>>* cleanBuffer(std::vector<std::bitset<4>> *buffer) {
     std::cout << "------------------Cleaning Buffer------------------" << std::endl;
     std::vector<std::bitset<4>>* cleanedBuffer = new std::vector<std::bitset<4>>;
     for (size_t i = 1; i < buffer->size(); i++) {
-        if((*buffer)[i] == CONTROL_BIT1 && (*buffer)[i+1] == CONTROL_BIT1 && i < buffer->size()-1) {
-            cleanedBuffer->push_back(CONTROL_BIT1);
-            i++;
-            continue;
-        }
-        if((*buffer)[i] == CONTROL_BIT1 && (*buffer)[i+1] != CONTROL_BIT1 && i < buffer->size()-1) {
+        
+        if(mappingTable.count((*buffer)[i])) {
             cleanedBuffer->push_back((*buffer)[i]);
-            i++;
-            continue;
         }
-        cleanedBuffer->push_back((*buffer)[i]);
     }
     return cleanedBuffer;
 }
