@@ -14,19 +14,19 @@
 ### Abbildungstabelle
  Symbol | Beschreibung |
 --------|--------------|
-0b0000  | Daten: 00
-0b0001  | nicht benutzt
+0b0**0**00  | Daten: 00
+0b0**0**01  | nicht benutzt
 0b0010  | nicht benutzt
 0b0011  | Daten: 11
 0b0100  | nicht benutzt
-0b0101  | Daten: 01
-0b0110  | Daten: 10
+0b0**1**01  | Daten: 01
+0b0**1**10  | Daten: 10
 0b0111  | Nicht benutzt
-0b1000  | Startzeichen
-0b1001  | Paketnummer (Ein Paket = 8 Byte)
-0b1010  | Doppelte zeichen zwischenzeichen
-0b1011  | OK Steuerzeichen
-0b1100  | 
-0b1101  |
-0b1110  | Stopzeichen
-0b1111  | Übertragung Ende
+0b**1**000  | Startzeichen
+0b**1**001  | Paketnummer (Ein Paket = 8 Byte)
+0b**1**010  | Doppelte zeichen zwischenzeichen
+0b**1**011  | OK Steuerzeichen
+0b**1**100  | 
+0b**1**101  |
+0b**1**110  | Stopzeichen
+0b**1**111  | Übertragung Ende
