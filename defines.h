@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 
-#define BIT_PERIOD 500
+#define BIT_PERIOD 20
 //#define CONTROL_BIT1 0b0001
 #define PACKET_SIZE 8
 #define STARTSYMBOL 0b1000
@@ -19,4 +19,4 @@
 #define ACKSYMBOL 0b1011
 #define DOUBLESYMBOL 0b1010
 
-const std::unordered_map<std::bitset<4>, std::bitset<2>> mappingTable;
+//const std::unordered_map<std::bitset<4>, std::bitset<2>> mappingTable;

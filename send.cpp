@@ -16,7 +16,7 @@ std::bitset<4> convertBitset(const std::bitset<2>& input) {
         return 0b0110;
     } else {
         // Handle other cases if needed
-        std::cout << "No conversion needed" << std::endl;
+        std::cout << "Something went wrong" << std::endl;
         return input.to_ulong(); // Convert the remaining bits to an integer
     }
 }
@@ -39,7 +39,7 @@ std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input) {
 
 void sendData(B15F& drv) {
 
-    // Define the function sendStartSequence
+    // Define the function sendSequence
 
     std::string input;
     std::cout << "Bitte geben Sie einen String ein: ";
@@ -57,30 +57,33 @@ void sendData(B15F& drv) {
     std::vector<std::bitset<4>> buffer = splitIntoFourBits(input);
 
     while (1) {
-        sendStartSequence(drv);
+        sendSequence(drv, STARTSYMBOL);
         sendBits(buffer, drv); // Call the defined sendBits function
+        sendSequence(drv, ENDTRANSMISSIONSYMBOL);
         drv.delay_ms(1000);
     } 
 }
 
-void sendStartSequence(B15F& drv) {
-    std::cout << "------------------Send Start Sequence------------------" << std::endl;
-    drv.setRegister(&PORTA, STARTSYMBOL);
+void sendSequence(B15F& drv, u_int8_t sequence) {
+    std::cout << "------------------Send Sequence: "<< sequence <<" ------------------" << std::endl;
+    drv.setRegister(&PORTA, sequence);
     drv.delay_ms(BIT_PERIOD);
 }
 
 void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv) {
     std::cout << "------------------Sening bits------------------" << std::endl;
     for (size_t i = 0; i < buffer.size(); i++) {
-        //If the current bit is uqual to the next, send one CONTROL_BIT1
+        //If the current bit is uqual to the next, send one DOUBLESYMBOL
         std::cout << buffer[i] << std::endl;
-        if((i<buffer.size()-1) && (buffer[i] == buffer[i+1])) {
-            drv.setRegister(&PORTA, DOUBLESYMBOL);
-            drv.delay_ms(BIT_PERIOD);
-        }
         drv.setRegister(&PORTA, buffer[i].to_ulong());
 
         drv.delay_ms(BIT_PERIOD);
+        if((i<buffer.size()-1) && (buffer[i] == buffer[i+1])) {
+            std::cout << std::bitset<4>(DOUBLESYMBOL) << std::endl;
+            drv.setRegister(&PORTA, std::bitset<4>(DOUBLESYMBOL).to_ulong());
+            drv.delay_ms(BIT_PERIOD);
+        }
+
     }
 }
 
