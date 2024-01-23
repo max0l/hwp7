@@ -37,17 +37,12 @@ std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input) {
     return buffer;
 }
 
-void sendData(B15F& drv, std::string input) {
+std::vector<std::bitset<4>>* sendData(B15F& drv, std::string input) {
 
 
-    std::vector<std::bitset<4>> buffer = splitIntoFourBits(input);
-
-    while (1) {
-        sendSequence(drv, STARTSYMBOL);
-        sendBits(buffer, drv); // Call the defined sendBits function
-        sendSequence(drv, ENDTRANSMISSIONSYMBOL);
-        drv.delay_ms(1000);
-    } 
+    std::vector<std::bitset<4>> *buffer = new std::vector<std::bitset<4>>;
+    (*buffer) = splitIntoFourBits(input);
+    return buffer;
 }
 
 void sendSequence(B15F& drv, u_int8_t sequence) {

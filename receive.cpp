@@ -34,15 +34,13 @@ void waitForStartBit(B15F& drv) {
 void getData(B15F& drv) {
     std::cout << "------------------Get Data------------------" << std::endl;
     std::vector<std::bitset<4>>* buffer = new std::vector<std::bitset<4>>;
-    while(1) {
-        waitForStartBit(drv);
-        writeToBuffer(buffer, drv);
-        if (!buffer->empty()) {
-            processBuffer(cleanSonderzeichen(buffer));
-        }
+    waitForStartBit(drv);
+    writeToBuffer(buffer, drv);
+    if (!buffer->empty()) {
+        processBuffer(cleanSonderzeichen(buffer));
+    }
 
-        buffer->clear();
-    } 
+    buffer->clear();
 }
 void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv) {
     std::cout << "------------------Write to Buffer------------------" << std::endl;
