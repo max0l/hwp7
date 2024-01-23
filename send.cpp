@@ -37,34 +37,47 @@ std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input) {
     return buffer;
 }
 
-std::vector<std::bitset<4>>* sendData(B15F& drv, std::string input) {
+std::vector<std::bitset<4>> insertDoubleSymbol(const std::vector<std::bitset<4>>& buffer) {
+    std::vector<std::bitset<4>> modifiedBuffer;
+
+    for (size_t i = 0; i < buffer.size(); i++) {
+        modifiedBuffer.push_back(buffer[i]);
+
+        if (i < buffer.size() - 1 && buffer[i] == buffer[i + 1]) {
+            modifiedBuffer.push_back(DOUBLESYMBOL);
+        }
+    }
+
+    return modifiedBuffer;
+}
+
+std::vector<std::bitset<4>>* generateBufferToSend(std::string input) {
 
 
     std::vector<std::bitset<4>> *buffer = new std::vector<std::bitset<4>>;
-    (*buffer) = splitIntoFourBits(input);
+    (*buffer) = insertDoubleSymbol(splitIntoFourBits(input));
     return buffer;
 }
 
-void sendSequence(B15F& drv, u_int8_t sequence) {
+void sendSequence(B15F& drv, u_int8_t sequence, uint8_t lanes) {
     std::cout << "------------------Send Sequence: "<< sequence <<" ------------------" << std::endl;
-    drv.setRegister(&PORTA, sequence);
+    uint8_t shift;
+    if(lanes == 0x0f) {
+        shift = 0;
+    } else {
+        shift = 4;
+    }
+    drv.setRegister(&PORTA, sequence << shift);
     drv.delay_ms(BIT_PERIOD);
 }
 
-void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv) {
-    std::cout << "------------------Sening bits------------------" << std::endl;
-    for (size_t i = 0; i < buffer.size(); i++) {
-        //If the current bit is uqual to the next, send one DOUBLESYMBOL
-        std::cout << buffer[i] << std::endl;
-        drv.setRegister(&PORTA, buffer[i].to_ulong());
-
-        drv.delay_ms(BIT_PERIOD);
-        if((i<buffer.size()-1) && (buffer[i] == buffer[i+1])) {
-            std::cout << std::bitset<4>(DOUBLESYMBOL) << std::endl;
-            drv.setRegister(&PORTA, std::bitset<4>(DOUBLESYMBOL).to_ulong());
-            drv.delay_ms(BIT_PERIOD);
-        }
-
+void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv, uint8_t lanes, int count) {
+    if(lanes == 0x0f) {
+        drv.setRegister(&PORTA, buffer[count].to_ulong());
+    } else {
+        drv.setRegister(&PORTA, (buffer[count].to_ulong() << 4));
     }
+    drv.delay_ms(BIT_PERIOD);
 }
 
+//wait for ACKSYMBOL and start a thread that waits for 60 seconds and then sends then sends the packet again
