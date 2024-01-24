@@ -7,6 +7,7 @@ const std::unordered_map<std::bitset<4>, std::bitset<2>> mappingTable = {
     {std::bitset<4>(0b0011), std::bitset<2>(0b11)},
 };
 
+/*
 void waitForStartBit(B15F& drv, uint8_t lanes) {
     std::cout << "------------------Wait for Start bit------------------" << std::endl;
     uint8_t shift;
@@ -37,6 +38,8 @@ void waitForStartBit(B15F& drv, uint8_t lanes) {
     }
     std::cout << "------------------exiting while loop startbits------------------" << std::endl;
 }
+*/
+/*
 bool getData(B15F& drv, uint8_t lanes) {
     std::cout << "------------------Get Data------------------" << std::endl;
     std::vector<std::bitset<4>>* buffer = new std::vector<std::bitset<4>>;
@@ -49,6 +52,7 @@ bool getData(B15F& drv, uint8_t lanes) {
     buffer->clear();
     return true;
 }
+*/
 void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv, uint8_t lanes) {
     std::cout << "------------------Write to Buffer------------------" << std::endl;
     std::cout << "Writing to Buffer" << std::endl;
@@ -94,7 +98,7 @@ void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv, uint8_t lanes
                 buffer->push_back(data);
         }
         */
-    }  
+    }
     
 }
 
@@ -185,25 +189,75 @@ void waitForACK(B15F& drv, uint8_t lanes) {
     } else {
         shift = 4;
     }
-    drv.setRegister(&DDRA, drv.getRegister(&DDRA) & ~lanes);
+    //TODO: REWORK BITMANIPULATION
+    drv.setRegister(&DDRA, 0x00);
     //wait for start bit has been send 3 times in a row. Wait invinite time
     uint8_t current = drv.getRegister(&PINA) & lanes;
     while(1) {
-        uint8_t tmp = drv.getRegister(&PINA) & lanes;
-        if(tmp != current) {
-            std::cout << "Got Something new " <<std::bitset<8>(current) << std::endl;
-            current = tmp;
-        } else {
-            //std::cout << "Got Nothing new " <<std::bitset<8>(current) << std::endl;
-            continue;
-        }
+        std::cout << "Got Something new " <<std::bitset<8>(current) << std::endl;
         current &= lanes;
         if(current>>shift == ACKSYMBOL) {
             std::cout << "Got ACK" << std::endl;
+            drv.setRegister(&DDRA, lanes);
+            std::cout << "------------------exiting while loop ACK------------------" << std::endl;
             return;
         }
     }
     
-    drv.setRegister(&DDRA, drv.getRegister(&DDRA) | lanes);
-    std::cout << "------------------exiting while loop ACK------------------" << std::endl;
+    
+}
+
+bool checkForStartSymbol(B15F& drv, uint8_t lanes) {
+    uint8_t shift;
+    if(lanes == 0x0f) {
+        shift = 0;
+    } else {
+        shift = 4;
+    }
+    uint8_t current = reverseBits(drv.getRegister(&PINA) & lanes);
+    std::cout << "Current is: " << std::bitset<8>(current) << std::endl;
+    
+    if(current == STARTSYMBOL) {
+        std::cout << "Got Start Bit" << std::endl;
+        drv.setRegister(&DDRA, 0xff);
+        sendSequence(drv, reverseBits(ACKSYMBOL), ~lanes);
+        drv.setRegister(&DDRA, lanes);
+        return true;
+    } else {
+        return false;
+    }
+} 
+
+uint8_t reverseBits(uint8_t input) {
+    uint8_t result = 0;
+    for (int i = 0; i < 8; i++) {
+        result |= ((input >> i) & 1) << (7 - i);
+    }
+    return result;
+}
+
+
+bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, B15F& drv, uint8_t lanes) {
+    //std::cout << "------------------Receive Bits------------------" << std::endl;
+    uint8_t shift;
+    if(lanes == 0x0f) {
+        shift = 0;
+    } else {
+        shift = 4;
+    }
+    //TODO: Find cause why I have to set this again!
+    drv.setRegister(&DDRA, 0x0F);
+    uint8_t data = reverseBits(drv.getRegister(&PINA));
+
+    if(receivingBuffer->empty() || (*receivingBuffer)[receivingBuffer->size()-1] != data) {
+        std::cout <<std::bitset<8>(data) << std::endl;
+        receivingBuffer->push_back(data);
+    }
+
+    if(!receivingBuffer->empty() &&
+        receivingBuffer->at(receivingBuffer->size()-1) == ENDTRANSMISSIONSYMBOL) {
+        processBuffer(cleanSonderzeichen(receivingBuffer));
+        return false;
+    }
+    return true;
 }

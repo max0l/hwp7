@@ -3,5 +3,4 @@
 #include "receive.h"
 #include "send.h"
 
-int main();
-uint8_t getLanes();
+int main(int argc, char* argv[]);
