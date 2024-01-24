@@ -60,18 +60,21 @@ std::vector<std::bitset<4>>* generateBufferToSend(std::string input) {
 }
 
 void sendSequence(B15F& drv, u_int8_t sequence, uint8_t lanes) {
-    std::cout << "------------------Send Sequence: "<< sequence <<" ------------------" << std::endl;
+
     uint8_t shift;
     if(lanes == 0x0f) {
         shift = 0;
     } else {
         shift = 4;
     }
+    std::cout << "------------------Send Sequence: "<< std::bitset<4>(sequence) << " to board: "
+    << std::bitset<8>(sequence << shift) <<" ------------------" << std::endl;
     drv.setRegister(&PORTA, sequence << shift);
     drv.delay_ms(BIT_PERIOD);
 }
 
 void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv, uint8_t lanes, int count) {
+    std::cout << "Sending bits: " << buffer[count]<< " On Lanes: " << std::bitset<8>(lanes) << std::endl;
     if(lanes == 0x0f) {
         drv.setRegister(&PORTA, buffer[count].to_ulong());
     } else {
