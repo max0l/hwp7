@@ -30,3 +30,8 @@
 0b**1**101  |
 0b**1**110  | Stopzeichen
 0b**1**111  | Übertragung Ende
+
+##
+Tisch 5: schwarz rechts
+Tisch 6: schwarz links
+wenn man davor sitzt
