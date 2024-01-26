@@ -9,7 +9,7 @@
 #include <unordered_map>
 
 
-#define BIT_PERIOD 30
+#define BIT_PERIOD 300
 //#define CONTROL_BIT1 0b0001
 #define PACKET_SIZE 8
 #define STARTSYMBOL 0b1000
