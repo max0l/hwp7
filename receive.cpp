@@ -183,23 +183,28 @@ void processBuffer(std::vector<std::bitset<4>> *buffer) {
 
 void waitForACK(B15F& drv, uint8_t lanes) {
     std::cout << "------------------Wait for ACK------------------" << std::endl;
+    //TODO: REWORK BITMANIPULATION
+    //drv.setRegister(&DDRA, 0x00);
+    //wait for start bit has been send 3 times in a row. Wait invinite time
     uint8_t shift;
     if(lanes == 0x0f) {
-        shift = 0;
-    } else {
+        //Shift 4 to the right to read symbols;
         shift = 4;
+    } else {
+        //Shift 0 to the right to read symbols;
+        shift = 0;
     }
-    //TODO: REWORK BITMANIPULATION
-    drv.setRegister(&DDRA, 0x00);
-    //wait for start bit has been send 3 times in a row. Wait invinite time
-    uint8_t current = drv.getRegister(&PINA) & lanes;
+
+    
+
     while(1) {
-        std::cout << "Got Something new " <<std::bitset<8>(current) << std::endl;
-        current &= lanes;
+        uint8_t current = drv.getRegister(&PINA);
+        std::cout << "------------------Reading: "<< std::bitset<4>(current>>shift) << " from board: "
+        << std::bitset<8>(current) <<" ------------------" << std::endl;
         if(current>>shift == ACKSYMBOL) {
-            std::cout << "Got ACK" << std::endl;
-            drv.setRegister(&DDRA, lanes);
-            std::cout << "------------------exiting while loop ACK------------------" << std::endl;
+            //std::cerr << std::bitset<8>(current) << std::endl;
+            std::cerr << "Got ACK" << std::endl;
+            std::cerr << "------------------exiting while loop ACK------------------" << std::endl;
             return;
         }
     }
@@ -210,24 +215,23 @@ void waitForACK(B15F& drv, uint8_t lanes) {
 bool checkForStartSymbol(B15F& drv, uint8_t lanes) {
     uint8_t shift;
     if(lanes == 0x0f) {
-        shift = 0;
-    } else {
         shift = 4;
+    } else {
+        shift = 0;
     }
-    uint8_t current = reverseBits(drv.getRegister(&PINA) & lanes);
-    std::cout << "Current is: " << std::bitset<8>(current) << std::endl;
+    uint8_t current = drv.getRegister(&PINA);
+    //std::cout << "Current is: " << std::bitset<8>(current) << std::endl;
     
-    if(current == STARTSYMBOL) {
+    if(current>>shift == STARTSYMBOL) {
         std::cout << "Got Start Bit" << std::endl;
-        drv.setRegister(&DDRA, 0xff);
-        sendSequence(drv, reverseBits(ACKSYMBOL), ~lanes);
-        drv.setRegister(&DDRA, lanes);
+        sendSequence(drv, ACKSYMBOL, lanes);
+        sendSequence(drv, 0x00, lanes);
         return true;
     } else {
         return false;
     }
 } 
-
+/*
 uint8_t reverseBits(uint8_t input) {
     uint8_t result = 0;
     for (int i = 0; i < 8; i++) {
@@ -235,19 +239,19 @@ uint8_t reverseBits(uint8_t input) {
     }
     return result;
 }
+*/
 
 
 bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, B15F& drv, uint8_t lanes) {
     //std::cout << "------------------Receive Bits------------------" << std::endl;
     uint8_t shift;
     if(lanes == 0x0f) {
-        shift = 0;
-    } else {
         shift = 4;
+    } else {
+        shift = 0;
     }
     //TODO: Find cause why I have to set this again!
-    drv.setRegister(&DDRA, 0x0F);
-    uint8_t data = reverseBits(drv.getRegister(&PINA));
+    uint8_t data = drv.getRegister(&PINA) >> shift;
 
     if(receivingBuffer->empty() || (*receivingBuffer)[receivingBuffer->size()-1] != data) {
         std::cout <<std::bitset<8>(data) << std::endl;

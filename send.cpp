@@ -60,7 +60,7 @@ std::vector<std::bitset<4>>* generateBufferToSend(std::string input) {
 }
 
 void sendSequence(B15F& drv, u_int8_t sequence, uint8_t lanes) {
-
+    //If writing, shift is reversed then at receiving
     uint8_t shift;
     if(lanes == 0x0f) {
         shift = 0;
@@ -75,11 +75,7 @@ void sendSequence(B15F& drv, u_int8_t sequence, uint8_t lanes) {
 
 void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv, uint8_t lanes, int count) {
     std::cout << "Sending bits: " << buffer[count]<< " On Lanes: " << std::bitset<8>(lanes) << std::endl;
-    if(lanes == 0x0f) {
-        drv.setRegister(&PORTA, buffer[count].to_ulong());
-    } else {
-        drv.setRegister(&PORTA, (buffer[count].to_ulong() << 4));
-    }
+    sendSequence(drv, buffer[count].to_ulong(), lanes);
     drv.delay_ms(BIT_PERIOD);
 }
 

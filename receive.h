@@ -10,4 +10,4 @@ void processBuffer(std::vector<std::bitset<4>> *buffer);
 void waitForACK(B15F& drv, uint8_t lanes);
 bool checkForStartSymbol(B15F& drv, uint8_t lanes);
 bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, B15F& drv, uint8_t lanes);
-uint8_t reverseBits(uint8_t input);
+//uint8_t reverseBits(uint8_t input);
