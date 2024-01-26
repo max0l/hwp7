@@ -220,6 +220,7 @@ bool checkForStartSymbol(B15F& drv, uint8_t lanes, uint8_t current) {
         std::cout << "Got Start Bit" << std::endl;
         sendSequence(drv, ACKSYMBOL, lanes);
         std::cerr << "Sent ACK after STARTSYMBOL" << std::endl;
+        //Maybe I need an OK
         return true;
     } else {
         //std::cerr << "No Sartsymbol" << std::endl;
@@ -250,6 +251,9 @@ bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, B15F& drv, uint8_
     uint8_t data = current >> shift;
 
     if(receivingBuffer->empty() || (*receivingBuffer)[receivingBuffer->size()-1] != data) {
+        if(receivingBuffer->empty()) {
+            std::cerr << "Buffer is empty, fill in first bits" << std::endl;
+        }
         std::cout <<std::bitset<8>(data) << std::endl;
         receivingBuffer->push_back(data);
     }
