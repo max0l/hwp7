@@ -76,6 +76,7 @@ int main(int argc, char* argv[]) {
 
     bool sendingStarted = false;
     
+    std::cerr << "Starting loop" << std::endl;
     drv.delay_ms(BIT_PERIOD);
     while(isSending || isReceiving) {
 
@@ -92,23 +93,26 @@ int main(int argc, char* argv[]) {
                 }
             }
             //TODO: THIS CAN CAUSE ERRORS! (Casting a bigger int to uint8_t)
-            if((uint8_t)sendingcounter==sendingBuffer->size()){
+            if(sendingcounter==sendingBuffer->size()){
                 isSending = false;
                 std::cerr << "Sending done" << std::endl;
                 sendSequence(drv, ENDTRANSMISSIONSYMBOL, lanes);
-                if(!gotSomething) {
-                    isReceiving = false;
-                    std::cerr << "everything done. Exiting now" << std::endl;
-                }
                 sendingStarted = false;
             }
             //NOTE: I have to put every symbol in the buffer so everything is send automatically in the right order
             if(sendingStarted) {
                 std::cerr << "Sending: " << sendingcounter << " = " << (*sendingBuffer)[sendingcounter] << std::endl;
                 sendBits((*sendingBuffer), drv, lanes, sendingcounter);
+
                 sendingcounter++;
             }
 
+        }
+
+        if(!gotSomething){
+            std::cerr << "Checking for start symbol" << std::endl;
+            gotSomething = checkForStartSymbol(drv, lanes, drv.getRegister(&PINA));
+            gotSomething ? std::cerr << "GOT SOMETHING. READING ENABLED" << std::endl : std::cerr << "No start symbol" << std::endl;
         }
 
         if(gotSomething) {
@@ -117,9 +121,11 @@ int main(int argc, char* argv[]) {
             if(!isReceiving) {
                 gotSomething = false;
             }
-        } else {
-            gotSomething = checkForStartSymbol(drv, lanes, drv.getRegister(&PINA));
         }
+
+
+
+
         //std::cerr << "loop is looping" << std::endl;
         //drv.delay_ms(1000);
         
