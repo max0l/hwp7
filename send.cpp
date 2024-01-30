@@ -1,28 +1,28 @@
 #include "send.h"
    
 std::bitset<4> convertBitset(const std::bitset<2>& input) {
-    //std::cout << "Converting bitset: " << input << std::endl;
+    //std::cerr << "Converting bitset: " << input << std::endl;
     if (input == 0b00) {
-        //std::cout << "Converted to: 0b0000" << std::endl;
+        //std::cerr << "Converted to: 0b0000" << std::endl;
         return 0b0000;
     } else if (input == 0b11) {
-        //std::cout << "Converted to: 0b0011" << std::endl;
+        //std::cerr << "Converted to: 0b0011" << std::endl;
         return 0b0011;
     } else if (input == 0b01) {
-        //std::cout << "Converted to: 0b0101" << std::endl;
+        //std::cerr << "Converted to: 0b0101" << std::endl;
         return 0b0101;
     } else if (input == 0b10) {
-        //std::cout << "Converted to: 0b0110" << std::endl;
+        //std::cerr << "Converted to: 0b0110" << std::endl;
         return 0b0110;
     } else {
         // Handle other cases if needed
-        std::cout << "Something went wrong" << std::endl;
+        std::cerr << "Something went wrong" << std::endl;
         return input.to_ulong(); // Convert the remaining bits to an integer
     }
 }
 
 std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input) {
-    std::cout << "------------------Split into four bits------------------" << std::endl;
+    std::cerr << "------------------Split into four bits------------------" << std::endl;
     std::vector<std::bitset<4>> buffer;
     std::cerr << "Converted Bits: "<< std::endl;
     for (size_t i = 0; i < input.size(); i++) {
@@ -57,6 +57,9 @@ std::vector<std::bitset<4>>* generateBufferToSend(std::string input) {
 
     std::vector<std::bitset<4>> *buffer = new std::vector<std::bitset<4>>;
     (*buffer) = insertDoubleSymbol(splitIntoFourBits(input));
+    (*buffer).push_back(HASHSYMBOL);
+     std::vector<std::bitset<4>> *hashBuffer = generateHashBufferOfInput(input);
+    (*buffer).insert((*buffer).end(), (*hashBuffer).begin(), (*hashBuffer).end());
     return buffer;
 }
 
@@ -68,15 +71,38 @@ void sendSequence(B15F& drv, u_int8_t sequence, uint8_t lanes) {
     } else {
         shift = 4;
     }
-    std::cout << "Send Sequence: "<< std::bitset<4>(sequence) << " to board: " << std::bitset<8>(sequence << shift) << std::endl;
+    std::cerr << "Send Sequence: "<< std::bitset<4>(sequence) << " to board: " << std::bitset<8>(sequence << shift) << std::endl;
     drv.setRegister(&PORTA, sequence << shift);
     drv.delay_ms(BIT_PERIOD);
 }
 
 void sendBits(const std::vector<std::bitset<4>>& buffer, B15F& drv, uint8_t lanes, int count) {
-    //std::cout << "Sending bits: " << buffer[count]<< " On Lanes: " << std::bitset<8>(lanes) << std::endl;
+    //std::cerr << "Sending bits: " << buffer[count]<< " On Lanes: " << std::bitset<8>(lanes) << std::endl;
     sendSequence(drv, buffer[count].to_ulong(), lanes);
     drv.delay_ms(BIT_PERIOD);
 }
+
+std::vector<std::bitset<4>>* generateHashBufferOfInput(std::string input) {
+
+
+    std::vector<std::bitset<4>> *buffer = new std::vector<std::bitset<4>>;
+    (*buffer) = insertDoubleSymbol(splitIntoFourBits(generareHash(input)));	
+    return buffer;
+}
+
+std::string generareHash(std::string input) {
+    std::string digest;
+    CryptoPP::SHA1 hash;
+
+    CryptoPP::StringSource foo(input, true,
+    new CryptoPP::HashFilter(hash,
+      new CryptoPP::Base64Encoder (
+         new CryptoPP::StringSink(digest))));
+
+
+    std::cerr << "Hash: " << digest << std::endl;
+    return digest;
+}
+
 
 //wait for ACKSYMBOL and start a thread that waits for 60 seconds and then sends then sends the packet again

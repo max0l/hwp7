@@ -7,8 +7,8 @@
 COMPILER_PATH = g++
 
 # Options
-CFLAGS   = -std=c++20 -Wall -Wextra
-LDFLAGS  = -lb15fdrv
+CFLAGS   = -std=c++20 -O3 -Wall -Wextra
+LDFLAGS  = -lb15fdrv -lcryptopp
 OBJECTS  = main.o receive.o send.o
 OUT      = main.elf
 

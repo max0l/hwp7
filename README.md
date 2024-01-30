@@ -26,7 +26,7 @@
 0b**1**001  | Paketnummer (Ein Paket = 8 Byte)
 0b**1**010  | Doppelte zeichen zwischenzeichen
 0b**1**011  | ACK Steuerzeichen
-0b**1**100  | 
+0b**1**100  | hash starting
 0b**1**101  |
 0b**1**110  | Stopzeichen
 0b**1**111  | Übertragung Ende
