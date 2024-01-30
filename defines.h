@@ -7,10 +7,12 @@
 #include <unistd.h>
 #include <bitset>
 #include <unordered_map>
+#define CRYPTOPP_ENABLE_NAMESPACE_WEAK 1
 #include <cryptopp/sha.h>
 #include <cryptopp/hex.h>
 #include <cryptopp/filters.h>
 #include <cryptopp/base64.h>
+#include <cryptopp/md5.h>
 
 
 #define BIT_PERIOD 30
@@ -23,5 +25,6 @@
 #define HASHSYMBOL 0b1100
 #define ACKSYMBOL 0b1011
 #define DOUBLESYMBOL 0b1010
+#define ERRORSYMBOL 0b1101
 
 //const std::unordered_map<std::bitset<4>, std::bitset<2>> mappingTable;

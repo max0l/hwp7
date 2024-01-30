@@ -9,6 +9,9 @@ bool readOnly = false;
 
 bool gotSomething = false;
 
+bool* dataWasCorrect = new bool(false);
+bool transmissionEnded = false;
+
 uint8_t lanes = 0x0f;
 
 int main(int argc, char* argv[]) {
@@ -42,7 +45,7 @@ int main(int argc, char* argv[]) {
         bool gotNoACK = true;
         std::cerr << "Waiting for ACK" << std::endl;
         while(gotNoACK){
-            gotNoACK = !waitForACK(lanes, drv.getRegister(&PINA));
+            gotNoACK = !waitForSymbol(ACKSYMBOL, lanes, drv.getRegister(&PINA));
         }
     } else {
         std::cerr << "Setting up lanes: I'm On 0xf0" << std::endl;
@@ -52,7 +55,7 @@ int main(int argc, char* argv[]) {
         readOnly = true;
     }
 
-    std::cerr << "Setting up lanes done!!!!!!!!!!!!!!!!!!!!! My lane: " << std::bitset<8>(lanes)<< std::endl;
+    std::cerr << "Setting up lanes done! My lane: " << std::bitset<8>(lanes)<< std::endl;
     std::string inputString;
     std::vector<std::bitset<4>> *sendingBuffer = nullptr;
     int sendingcounter = 0;
@@ -87,22 +90,33 @@ int main(int argc, char* argv[]) {
 
         if(isSending) {
             if(sendingcounter==0){
+                std::cerr << "Sending Start Symbol" << std::endl;
                 sendSequence(drv, STARTSYMBOL, lanes);
                 drv.delay_ms(BIT_PERIOD);
-                if(waitForACK(lanes, drv.getRegister(&PINA))) {
-                    std::cerr << "Got ACK!!!!!!!!!!!!!!!!!!!!!" << std::endl;
+                if(waitForSymbol(ACKSYMBOL, lanes, drv.getRegister(&PINA))) {
+                    std::cerr << "Got ACK! Sending Enabled" << std::endl;
                     sendingStarted = true;
                 } else {
-                    std::cerr << "no ack" << std::endl;
+                    std::cerr << "no ack, retrying" << std::endl;
                     sendingStarted = false;
                 }
             }
             //TODO: THIS CAN CAUSE ERRORS! (Casting a bigger int to uint8_t)
             if(sendingcounter==sendingBuffer->size()){
-                isSending = false;
+                
                 std::cerr << "Sending done" << std::endl;
-                sendSequence(drv, ENDTRANSMISSIONSYMBOL, lanes);
+
+                uint8_t current = drv.getRegister(&PINA);
+                
                 sendingStarted = false;
+                if(waitForSymbol(ACKSYMBOL, lanes, current)) {
+                    sendingcounter = 0;
+                    isSending = false;
+                    std::cerr << "Ending Transmission!" << std::endl;
+                } else if(waitForSymbol(ERRORSYMBOL, lanes, current)) {
+                    sendingcounter = 0;
+                    std::cerr << "Error while sending!" << std::endl;
+                }
             }
             //NOTE: I have to put every symbol in the buffer so everything is send automatically in the right order
             if(sendingStarted) {
@@ -110,31 +124,47 @@ int main(int argc, char* argv[]) {
                 sendBits((*sendingBuffer), drv, lanes, sendingcounter);
 
                 sendingcounter++;
+                if(sendingcounter == sendingBuffer->size()) {
+                    std::cerr << "Sending End Transmission Symbol" << std::endl;
+                    sendSequence(drv, ENDTRANSMISSIONSYMBOL, lanes);
+                }
             }
 
         }
 
-        if(!gotSomething){
-            std::cerr << "Checking for start symbol" << std::endl;
-            gotSomething = checkForStartSymbol(drv, lanes, drv.getRegister(&PINA));
+        if(!gotSomething && !transmissionEnded){
+            //std::cerr << "Checking for start symbol" << std::endl;
+            gotSomething = checkForSymbol(drv, STARTSYMBOL, lanes, drv.getRegister(&PINA));
             gotSomething ? std::cerr << "GOT SOMETHING. READING ENABLED" << std::endl : std::cerr << "No start symbol" << std::endl;
             if(gotSomething) {
                 isReceiving = true;
             } else {
                 isReceiving = false;
             }
-        }
-
-        if(gotSomething) {
+        } else {
             //std::cerr << "Got something" << std::endl;
-            isReceiving = receiveBits(receivingBuffer, lanes, drv.getRegister(&PINA));
+            transmissionEnded = receiveBits(receivingBuffer, lanes, drv.getRegister(&PINA), dataWasCorrect);          
             if(!isReceiving) {
                 gotSomething = false;
             }
+
         }
-
-
-
+        /*
+        For next Time:
+        - Die checks sind falsch, weil else if true wird und das zu fehlern führt
+        */
+        if(!(*dataWasCorrect) && transmissionEnded) {
+            sendSequence(drv, ERRORSYMBOL, lanes);
+            receivingBuffer->clear();
+            std::cerr << "Sending: Data was not correct" << std::endl;
+            isReceiving = true;
+            gotSomething = false;
+        } else if((*dataWasCorrect) && transmissionEnded) {
+            std::cerr << "Sending: Data was correct" << std::endl;
+            sendSequence(drv, ACKSYMBOL, lanes);
+            isReceiving = false;
+            gotSomething = false;
+        }
 
         //std::cerr << "loop is looping" << std::endl;
         //drv.delay_ms(1000);

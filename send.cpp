@@ -22,15 +22,15 @@ std::bitset<4> convertBitset(const std::bitset<2>& input) {
 }
 
 std::vector<std::bitset<4>> splitIntoFourBits(const std::string& input) {
-    std::cerr << "------------------Split into four bits------------------" << std::endl;
+    //std::cerr << "------------------Split into four bits------------------" << std::endl;
     std::vector<std::bitset<4>> buffer;
-    std::cerr << "Converted Bits: "<< std::endl;
+    //std::cerr << "Converted Bits: "<< std::endl;
     for (size_t i = 0; i < input.size(); i++) {
         std::bitset<8> inputBits(input[i]);
         for (int j = 6; j >= 0; j -= 2) { // Corrected loop condition
             std::bitset<2> twoBits((inputBits >> j).to_ulong()); // Convert to an integer before shifting
             std::bitset<4> convertedBits = convertBitset(twoBits);
-            std::cerr << convertedBits << std::endl;
+            //std::cerr << convertedBits << std::endl;
             buffer.push_back(convertedBits);
         }
     }
@@ -71,7 +71,7 @@ void sendSequence(B15F& drv, u_int8_t sequence, uint8_t lanes) {
     } else {
         shift = 4;
     }
-    std::cerr << "Send Sequence: "<< std::bitset<4>(sequence) << " to board: " << std::bitset<8>(sequence << shift) << std::endl;
+    //std::cerr << "Send Sequence: "<< std::bitset<4>(sequence) << " to board: " << std::bitset<8>(sequence << shift) << std::endl;
     drv.setRegister(&PORTA, sequence << shift);
     drv.delay_ms(BIT_PERIOD);
 }
@@ -89,7 +89,7 @@ std::vector<std::bitset<4>>* generateHashBufferOfInput(std::string input) {
     (*buffer) = insertDoubleSymbol(splitIntoFourBits(generareHash(input)));	
     return buffer;
 }
-
+/*
 std::string generareHash(std::string input) {
     std::string digest;
     CryptoPP::SHA1 hash;
@@ -103,6 +103,30 @@ std::string generareHash(std::string input) {
     std::cerr << "Hash: " << digest << std::endl;
     return digest;
 }
+*/
+
+std::string generareHash(const std::string& input) {
+    // Create a new instance of the MD5 hash function
+    CryptoPP::Weak::MD5 hash;
+
+    // Create a string to store the hexadecimal hash
+    std::string digest;
+
+    // Create a new Hash Filter that feeds into a Hex Encoder,
+    // and then add the Hex Encoder's output to the digest string
+    CryptoPP::StringSource(input, true, 
+        new CryptoPP::HashFilter(hash, 
+            new CryptoPP::HexEncoder(
+                new CryptoPP::StringSink(digest)
+            )
+        )
+    );
+
+    std::cerr << "Hash: " << digest << std::endl;
+    // Return the hex encoded hash value
+    return digest;
+}
+
 
 
 //wait for ACKSYMBOL and start a thread that waits for 60 seconds and then sends then sends the packet again
