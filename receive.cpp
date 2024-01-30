@@ -54,8 +54,8 @@ bool getData(B15F& drv, uint8_t lanes) {
 }
 */
 void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv, uint8_t lanes) {
-    std::cerr << "------------------Write to Buffer------------------" << std::endl;
-    std::cerr << "Writing to Buffer" << std::endl;
+    //std::cerr << "------------------Write to Buffer------------------" << std::endl;
+    //std::cerr << "Writing to Buffer" << std::endl;
     uint8_t shift;
     if(lanes == 0x0f) {
         shift = 0;
@@ -67,7 +67,7 @@ void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv, uint8_t lanes
     while (1) {
         uint8_t tmp = drv.getRegister(&PINA) & lanes;
         if(tmp != data) {
-            std::cerr <<std::bitset<4>(data) << std::endl;
+            //std::cerr <<std::bitset<4>(data) << std::endl;
             data = tmp;
         } else {
             //std::cerr << "Got Nothing new " <<std::bitset<8>(current) << std::endl;
@@ -104,12 +104,13 @@ void writeToBuffer(std::vector<std::bitset<4>> *buffer, B15F& drv, uint8_t lanes
 
 std::vector<std::bitset<4>>* cleanSonderzeichen(std::vector<std::bitset<4>> *buffer) {
     
-
+    /*
     std::cerr << "The buffer is:" << std::endl;
     for (size_t i = 0; i < buffer->size(); i++) {
         std::cerr << (*buffer)[i] << std::endl;
     }
-    std::cerr << "------------------Cleaning Buffer------------------" << std::endl;
+    */
+    //std::cerr << "------------------Cleaning Buffer------------------" << std::endl;
     std::vector<std::bitset<4>>* cleanedBuffer = new std::vector<std::bitset<4>>;
     for (size_t i = 0; i < buffer->size(); i++) {
         //std::cerr << "Checking if " << (*buffer)[i] << " = " << std::bitset<4>((*buffer)[i]) << " is a valid symbol" << std::endl;
@@ -122,7 +123,7 @@ std::vector<std::bitset<4>>* cleanSonderzeichen(std::vector<std::bitset<4>> *buf
         if(mappingTable.contains(std::bitset<4>((*buffer)[i]))) {
             cleanedBuffer->push_back((*buffer)[i]);
         } else if((*buffer)[i] == HASHSYMBOL) {
-            std::cerr << "Got Hash" << std::endl;
+            //std::cerr << "Got Hash" << std::endl;
             break;
         }
         
@@ -130,20 +131,24 @@ std::vector<std::bitset<4>>* cleanSonderzeichen(std::vector<std::bitset<4>> *buf
             std::cerr << (*buffer)[i] << " is not a valid symbol"  << std::endl;
         }*/
     }
+    /*
     std::cerr << "The cleaned buffer is:";
     if(cleanedBuffer->empty()) {
         std::cerr << "empty" << std::endl;
     } else {
         std::cerr << "not empty" << std::endl;
     }
+    */
+    /*
     for (size_t i = 0; i < cleanedBuffer->size(); i++) {
         std::cerr << (*cleanedBuffer)[i] << std::endl;
     }
+    */
     return cleanedBuffer;
 }
 
 std::string processBuffer(std::vector<std::bitset<4>> *buffer) {
-    std::cerr << "------------------Processing Buffer------------------" << std::endl;
+    //std::cerr << "------------------Processing Buffer------------------" << std::endl;
     std::vector<unsigned char> data;
 
     std::string dataString = "";
@@ -175,20 +180,22 @@ std::string processBuffer(std::vector<std::bitset<4>> *buffer) {
     }
     
     // Print out all Bits in data bytewise
+    /*
     std::cerr << "Data is: " << std::endl;
     for (size_t i = 0; i < data.size(); i++) {
         std::cerr << std::bitset<8>(data[i]) << std::endl;
     }
+    */
 
     std::cerr << "Translated: " << std::endl;
     for (size_t i = 0; i < data.size(); i++) {
-        std::cout << data[i];
+        //std::cout << data[i];
         dataString += data[i];
     }
     return dataString;
 }
 
-bool waitForACK(uint8_t lanes, uint8_t current) {
+bool waitForSymbol(uint8_t symbol, uint8_t lanes, uint8_t current) {
     //std::cerr << "------------------Wait for ACK------------------" << std::endl;
     //TODO: REWORK BITMANIPULATION
     //drv.setRegister(&DDRA, 0x00);
@@ -201,12 +208,11 @@ bool waitForACK(uint8_t lanes, uint8_t current) {
         //Shift 0 to the right to read symbols;
         shift = 0;
     }
-    if((current&~lanes)>>shift == ACKSYMBOL) {
-        std::cerr << "------------------Reading: "<< std::bitset<4>(current>>shift) << " from board: "
-        << std::bitset<8>(current) <<" ------------------" << std::endl;
+    if((current&~lanes)>>shift == symbol) {
+        //std::cerr << "------------------Reading: "<< std::bitset<4>(current>>shift) << " from board: " << std::bitset<8>(current) <<" ------------------" << std::endl;
         //std::cerr << std::bitset<8>(current) << std::endl;
-        std::cerr << "Got ACK" << std::endl;
-        std::cerr << "------------------exiting while loop ACK------------------" << std::endl;
+        //std::cerr << "Got ACK" << std::endl;
+        //std::cerr << "------------------exiting while loop ACK------------------" << std::endl;
         return true;
     } else {
         return false;
@@ -214,6 +220,7 @@ bool waitForACK(uint8_t lanes, uint8_t current) {
     
     
 }
+/*
 
 bool checkForStartSymbol(B15F& drv, uint8_t lanes, uint8_t current) {
     uint8_t shift;
@@ -234,6 +241,29 @@ bool checkForStartSymbol(B15F& drv, uint8_t lanes, uint8_t current) {
         return false;
     }
 
+}
+*/
+
+bool checkForSymbol(B15F& drv, uint8_t symbol , uint8_t lanes, uint8_t current) {
+    uint8_t shift;
+    if(lanes == 0x0f) {
+        shift = 4;
+    } else {
+        shift = 0;
+    }
+    //std::cerr << "Current is: " << std::bitset<8>(current) << std::endl;
+    if((current&~lanes)>>shift == symbol) {
+        std::cerr << "Got Bit" << std::endl;
+        sendSequence(drv, ACKSYMBOL, lanes);
+        drv.delay_ms(BIT_PERIOD);
+        std::cerr << "Sent ACK" << std::endl;
+        //Maybe I need an OK
+        return true;
+    } else {
+        //std::cerr << "No Sartsymbol" << std::endl;
+        return false;
+    }
+
 } 
 /*
 uint8_t reverseBits(uint8_t input) {
@@ -246,7 +276,7 @@ uint8_t reverseBits(uint8_t input) {
 */
 
 
-bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, uint8_t lanes, uint8_t current) {
+bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, uint8_t lanes, uint8_t current, bool* dataWasCorrect) {
     //std::cerr << "------------------Receive Bits------------------" << std::endl;
     std::string dataString = "";
     uint8_t shift;
@@ -262,23 +292,24 @@ bool receiveBits(std::vector<std::bitset<4>> *receivingBuffer, uint8_t lanes, ui
         if(receivingBuffer->empty()) {
             std::cerr << "Buffer is empty, fill in first bits" << std::endl;
         }
-        std::cerr <<std::bitset<8>(data) << std::endl;
+        //std::cerr <<std::bitset<8>(data) << std::endl;
         receivingBuffer->push_back(data);
     }
 
     if(!receivingBuffer->empty() &&
         receivingBuffer->at(receivingBuffer->size()-1) == ENDTRANSMISSIONSYMBOL) {
-        std::cerr << "Got End Transmission Symbol" << std::endl;
+        //std::cerr << "Got End Transmission Symbol" << std::endl;
         dataString = processBuffer(cleanSonderzeichen(receivingBuffer));
-        bool successfullTransmission = checkHash(receivingBuffer, dataString);
-        if(successfullTransmission) {
+        std::cout << dataString << std::endl;
+        (*dataWasCorrect) = checkHash(receivingBuffer, dataString);
+        if((*dataWasCorrect)) {
             std::cerr << "Transmission was successfull" << std::endl;
         } else {
             std::cerr << "Transmission was not successfull" << std::endl;
         }
-        return false;
+        return true;
     }
-    return true;
+    return false;
 }
 
 
