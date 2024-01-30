@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 
     // Rest of your code...
 
-    std::cout << "Starting" << std::endl;
+    std::cerr << "Starting" << std::endl;
 
     B15F& drv = B15F::getInstance();
     drv.setRegister(&DDRA, 0x00);
@@ -42,7 +42,7 @@ int main(int argc, char* argv[]) {
         bool gotNoACK = true;
         std::cerr << "Waiting for ACK" << std::endl;
         while(gotNoACK){
-            gotNoACK = !waitForACK(drv, lanes, drv.getRegister(&PINA));
+            gotNoACK = !waitForACK(lanes, drv.getRegister(&PINA));
         }
     } else {
         std::cerr << "Setting up lanes: I'm On 0xf0" << std::endl;
@@ -63,12 +63,17 @@ int main(int argc, char* argv[]) {
 
 
     if (!isatty(fileno(stdin))) {
-        std::getline(std::cin, inputString); // Read the entire line from stdin
-        std::cout << "Input: " << inputString << std::endl;
+        std::string line;
+        while (std::getline(std::cin, line)) {
+            //if its the last line, dont add a newline
+            inputString += line + "\n"; // Append each line to the existing inputString
+        }
+        std::cerr << "Input: " << inputString << std::endl;
         sendingBuffer = generateBufferToSend(inputString);
+        std::cerr << "Buffersize: " << sendingBuffer->size() << std::endl;
         isSending = true;
     } else {
-        std::cout << "No input" << std::endl;
+        std::cerr << "No input" << std::endl;
         isSending = false;
     }
 
@@ -84,7 +89,7 @@ int main(int argc, char* argv[]) {
             if(sendingcounter==0){
                 sendSequence(drv, STARTSYMBOL, lanes);
                 drv.delay_ms(BIT_PERIOD);
-                if(waitForACK(drv, lanes, drv.getRegister(&PINA))) {
+                if(waitForACK(lanes, drv.getRegister(&PINA))) {
                     std::cerr << "Got ACK!!!!!!!!!!!!!!!!!!!!!" << std::endl;
                     sendingStarted = true;
                 } else {
@@ -113,11 +118,16 @@ int main(int argc, char* argv[]) {
             std::cerr << "Checking for start symbol" << std::endl;
             gotSomething = checkForStartSymbol(drv, lanes, drv.getRegister(&PINA));
             gotSomething ? std::cerr << "GOT SOMETHING. READING ENABLED" << std::endl : std::cerr << "No start symbol" << std::endl;
+            if(gotSomething) {
+                isReceiving = true;
+            } else {
+                isReceiving = false;
+            }
         }
 
         if(gotSomething) {
             //std::cerr << "Got something" << std::endl;
-            isReceiving = receiveBits(receivingBuffer, drv, lanes, drv.getRegister(&PINA));
+            isReceiving = receiveBits(receivingBuffer, lanes, drv.getRegister(&PINA));
             if(!isReceiving) {
                 gotSomething = false;
             }
