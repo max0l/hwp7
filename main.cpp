@@ -62,9 +62,6 @@ int main(int argc, char* argv[]) {
 
     std::vector<std::bitset<4>> *receivingBuffer = new std::vector<std::bitset<4>>;
 
-
-
-
     if (!isatty(fileno(stdin))) {
         std::string line;
         while (std::getline(std::cin, line)) {
